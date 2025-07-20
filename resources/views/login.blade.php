@@ -255,7 +255,7 @@
                 <div class="content-box text-center">
                     <img src="https://ucarecdn.com/32b7ea92-19ac-4651-aafd-fd25068ece2f/image.png" alt="Logo SMK Mulia Buana"
                         style="max-height: 100px; border-radius: 5%;" class="mb-3">
-                    <h4>Selamat Datang di E-Learning SMK Mulia Buana</h4>
+                    <h4>Selamat Datang di E-Learning SMA-SMK Mulia Buana</h4>
                     <p class="mt-3">
                         Aplikasi ini dirancang untuk mendukung proses belajar mengajar secara digital.
                         Siswa dapat mengakses materi, tugas, dan kuis online. Guru dapat memberikan soal,
