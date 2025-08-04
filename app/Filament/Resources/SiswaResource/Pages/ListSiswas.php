@@ -31,9 +31,10 @@ class ListSiswas extends ListRecords
                 ->form([
                     // Tombol untuk mendownload template
                     FileUpload::make('attachment')
-                    ->label(new HtmlString('<a href="' . route('template-siswa') . '" target="_blank" type="button" style="background-color: orange; color: white; padding: 2px;">Download Format Guru</a>'))
+                  
                 ])
                 ->action(function (array $data) {
+                    set_time_limit(0);
                     $file = public_path('storage/' . $data['attachment']);
                     Excel::import(new SiswasImport, $file);
                     Notification::make()

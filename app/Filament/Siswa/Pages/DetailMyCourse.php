@@ -2,9 +2,11 @@
 
 namespace App\Filament\Siswa\Pages;
 
-use App\Models\GuruMataPelajaran;
-use App\Models\SesiBelajar;
 use Filament\Pages\Page;
+use App\Models\SesiBelajar;
+use App\Models\GuruMataPelajaran;
+use App\Models\Siswa;
+use Illuminate\Support\Facades\Auth;
 
 class DetailMyCourse extends Page
 {
@@ -19,14 +21,26 @@ class DetailMyCourse extends Page
     public $mataPelajaran;
     public $sesiBelajars = [];
     public $slugMapel;
-    public function mount($slugMapel)
-    {
-        // Ambil mata pelajaran berdasarkan slug
-        $this->guruMapel = GuruMataPelajaran::where('slug', $slugMapel)->first();
-        // $this->sesiBelajar = SesiBelajar::where("id_guru_mata_pelajaran", $this->guruMapel->id)->get();
-        $this->sesiBelajars = $this->guruMapel->sesiBelajar;
-        session()->put('slugMapel', $slugMapel);
+public function mount($slugMapel)
+{
+    $siswa = Auth::user()->siswa ?? Siswa::where('id', Auth::id())->first();
+
+    if (!$siswa) {
+        abort(403, 'Data siswa tidak ditemukan.');
     }
+
+    $this->guruMapel = GuruMataPelajaran::where('slug', $slugMapel)->first();
+
+    $this->sesiBelajars = $this->guruMapel->sesiBelajar()
+        ->where(function ($query) use ($siswa) {
+            $query->where('id_kelas', $siswa->id_kelas)
+                  ->orWhereNull('id_kelas');
+        })
+        ->get();
+
+    session()->put('slugMapel', $slugMapel);
+}
+
 
     public function sesiBelajar($slug)
     {   

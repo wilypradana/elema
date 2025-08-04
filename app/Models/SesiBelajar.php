@@ -15,6 +15,7 @@ class SesiBelajar extends Model
         'judul',
         'slug',
         'id_guru_mata_pelajaran',
+        'id_kelas',
     ];
     
     protected $primaryKey = 'id'; 
@@ -37,6 +38,10 @@ class SesiBelajar extends Model
 
     public function guruMataPelajaran(): BelongsTo{
         return $this->belongsTo(GuruMataPelajaran::class, 'id_guru_mata_pelajaran', 'id');
+    }
+
+    public function kelas(): BelongsTo{
+        return $this->belongsTo(Kelas::class, 'id_kelas', 'id');
     }
 
     public function materi():HasOne{

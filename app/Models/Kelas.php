@@ -12,7 +12,7 @@ class Kelas extends Model
     protected $keyType = 'int';
     public $incrementing = true;
     public $timestamps = false;
-
+    protected $table = "kelas";
      protected $fillable = [
         'kode',
         'nama',

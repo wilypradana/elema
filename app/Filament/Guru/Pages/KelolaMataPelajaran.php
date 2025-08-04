@@ -8,6 +8,7 @@ use Filament\Pages\Page;
 use App\Models\MataPelajaran;
 use App\Models\SesiBelajar;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Notifications\Notification;
 use Filament\Pages\Concerns\InteractsWithFormActions;
 use Filament\Tables\Actions\Action;
@@ -36,11 +37,11 @@ class KelolaMataPelajaran extends Page
     public $sesiBelajar;
     public $slugGuruMapel;
     public $kelas;
+    public $selectedKelas = []; // Property untuk menyimpan kelas yang dipilih
 
     public function mount($slugGuruMapel)
     {
         $this->slugGuruMapel = $slugGuruMapel;
-        // Ambil mata pelajaran berdasarkan slug
         $this->guruMapel = GuruMataPelajaran::where('slug', $slugGuruMapel)->first();
         if (!$this->guruMapel) {
             abort(404);
@@ -58,38 +59,73 @@ class KelolaMataPelajaran extends Page
 
     public function getFormSchema(): array
     {
+        // Prepare options untuk checkbox list
+        $kelasOptions = [];
+        foreach ($this->kelas as $kelas) {
+            $kelasOptions[$kelas['id_kelas']] = $kelas['nama_kelas'];
+        }
+
         return [
             TextInput::make('judul')
-                ->label('Sesi Belajar')
+                ->label('Judul Sesi Belajar')
+                ->required(),
+            
+            CheckboxList::make('selectedKelas')
+                ->label('Pilih Kelas')
+                ->options($kelasOptions)
                 ->required()
-
+                ->helperText('Pilih kelas mana saja yang akan memiliki sesi belajar ini')
+                ->columns(2)
         ];
     }
+
     public function save()
     {
         $this->validate([
-            'judul' => 'required'
+            'judul' => 'required',
+            'selectedKelas' => 'required|array|min:1'
         ]);
 
         $guruMapel = GuruMataPelajaran::where('slug', $this->guruMapel->slug)->first();
 
-        if (!empty($this->judul)) {
-            SesiBelajar::create([
-                'judul' => $this->judul,
-                'id_guru_mata_pelajaran' => $guruMapel->id
-            ]);
+        if (!empty($this->judul) && !empty($this->selectedKelas)) {
+            foreach ($this->selectedKelas as $idKelas) {
+                SesiBelajar::create([
+                    'judul' => $this->judul,
+                    'id_guru_mata_pelajaran' => $guruMapel->id,
+                    'id_kelas' => $idKelas 
+                ]);
+            }
         }
 
         Notification::make()
             ->success()
             ->title('Berhasil')
-            ->body('Sesi Belajar berhasil ditambah.')
+            ->body('Sesi Belajar berhasil ditambahkan untuk ' . count($this->selectedKelas) . ' kelas.')
             ->send();
-        // Clear the form
+        
         $this->dispatch('close-modal', id: 'tambah-sesi-modal');
 
-        // Refresh the table
+        // Reset form
+        $this->judul = '';
+        $this->selectedKelas = [];
+        
+        // Refresh data sesi belajar
         $this->sesiBelajar = SesiBelajar::where('id_guru_mata_pelajaran', $this->guruMapel->id)->get()->toArray();
+    }
+
+    public function getSelectedKelasNames()
+    {
+        $names = [];
+        foreach ($this->selectedKelas as $idKelas) {
+            foreach ($this->kelas as $kelas) {
+                if ($kelas['id_kelas'] == $idKelas) {
+                    $names[] = $kelas['nama_kelas'];
+                    break;
+                }
+            }
+        }
+        return $names;
     }
 
     public function deleteSesiBelajar($idSesiBelajar)
@@ -105,7 +141,6 @@ class KelolaMataPelajaran extends Page
                 ->body('Sesi Belajar berhasil dihapus.')
                 ->send();
 
-            // Refresh data sesi belajar
             $this->sesiBelajar = SesiBelajar::where('id_guru_mata_pelajaran', $this->guruMapel->id)->get()->toArray();
         } else {
             Notification::make()
@@ -115,5 +150,4 @@ class KelolaMataPelajaran extends Page
                 ->send();
         }
     }
-
 }
