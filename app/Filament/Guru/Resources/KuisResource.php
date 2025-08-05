@@ -60,8 +60,8 @@ class KuisResource extends Resource
                     Forms\Components\TextInput::make('nilai_minimal')
                         ->required()
                         ->numeric()
-                        ->minValue(0) // Kamu bisa atur nilai minimal
-                        ->maxValue(100) // Jika ingin ada batasan maksimal (misal 100)
+                        ->minValue(0) 
+                        ->maxValue(100) 
                         ->label('Nilai Minimal'),
                     Forms\Components\TextInput::make('durasi')
                         ->numeric()
