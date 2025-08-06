@@ -44,7 +44,9 @@ class PertanyaansRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('bobot'),
             ])
             ->headerActions([
-    // Tombol Template Soal (hanya redirect ke Google Sheets)
+            Tables\Actions\CreateAction::make(),
+
+    // Tombol Template Soal 
     Tables\Actions\Action::make('templateSoal')
         ->label('Template Soal')
         ->icon('heroicon-o-link')
