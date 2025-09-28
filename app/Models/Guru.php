@@ -36,4 +36,18 @@ class Guru extends Authenticatable
     {
         return $this->hasMany(Kuis::class, 'id_guru', 'id');
     }
+
+
+
+      public function sesiBelajars(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            SesiBelajar::class,        // related (tujuan)
+            GuruMataPelajaran::class,  // through  (perantara)
+            'id_guru',                 // firstKey: FK di tabel through -> gurus.id
+            'id_guru_mata_pelajaran',  // secondKey: FK di tabel related -> gmp.id
+            'id',                      // localKey: PK di gurus   ✅ JANGAN 'id_kelas'
+            'id'                       // secondLocalKey: PK di guru_mata_pelajarans
+        );
+    }
 }

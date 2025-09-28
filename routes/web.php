@@ -1,11 +1,14 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\RekapController;
 use Illuminate\Support\Facades\Route;
 use Livewire\Attributes\Url;
 
 
 Route::get('/', [AuthController::class, 'showLoginForm'])->name('login');
+Route::get('/rekap/guru', [RekapController::class, 'index']);
+
 
 Route::get('/template-siswa', function () {
     $filePath = storage_path('app/public/panduan/template-siswa.xlsx'); // Pastikan file ada di lokasi yang tepat

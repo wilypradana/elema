@@ -59,20 +59,22 @@ class TugasRelationManager extends RelationManager
                 Tables\Actions\DeleteAction::make()
                     ->action(function ($record) {
                         // Menghapus file yang terkait
-                        $pengumpulanTugas = PengumpulanTugas::where('id_tugas', $record->id)->first();
-                        $filePengumpulanTugas = FilePengumpulanTugas::where('pengumpulan_tugas_id', $pengumpulanTugas->id)->get();
-                        foreach ($filePengumpulanTugas as $file) {
-                            // Hapus file dari storage
-                            if (Storage::disk('public')->exists($file->file)) {
-                                Storage::disk('public')->delete($file->file);
-                            }
-                            // Hapus dari database
-                            $file->delete();
-                        }
+                           $pengumpulanIds = PengumpulanTugas::where('id_tugas', $record->id)->pluck('id');
 
-                        // Hapus pengumpulan tugas dari database
-                        $pengumpulanTugas->delete();
+            if ($pengumpulanIds->isNotEmpty()) {
+                // ambil path file (boleh kosong)
+                $paths = FilePengumpulanTugas::whereIn('pengumpulan_tugas_id', $pengumpulanIds)
+                    ->pluck('file')->filter();
 
+                // hapus file fisik (aman walau sebagian tidak ada)
+                if ($paths->isNotEmpty()) {
+                    Storage::disk('public')->delete($paths->all());
+                }
+
+                // hapus baris file & pengumpulan (aman walau kosong)
+                FilePengumpulanTugas::whereIn('pengumpulan_tugas_id', $pengumpulanIds)->delete();
+                PengumpulanTugas::whereIn('id', $pengumpulanIds)->delete();
+            }
                         // Refresh halaman
                         $record->delete();
                         return redirect()->back();

@@ -70,44 +70,71 @@ class Submission extends Page
     public function getFormSchema(): array
     {
         return [
-            Grid::make(1)
-                ->schema([
-                    FileUpload::make('file')
-                        ->required()
-                        ->multiple()
-                        ->maxFiles(2048)
-                        ->helperText('Ukuran maksimal file 2MB per file.')
-                ]),
-        ];
+            Grid::make(1)->schema([
+            FileUpload::make('file')
+            ->required()
+            ->multiple()
+            ->maxFiles(10)
+            ->maxSize(10240)
+            ->acceptedFileTypes([
+                'image/jpeg',
+                'image/png',
+                'image/gif',
+                'image/webp',
+                'application/pdf',
+            ])
+            ->rules(['file', 'max:10240', 'mimes:jpg,jpeg,png,gif,webp,pdf'])
+            ->disk('public')
+            ->directory('filemateri')
+            ->visibility('public')
+            ->helperText('Ukuran maksimal 10MB per file (JPG/PNG/GIF/WebP/PDF).')
+
+    ]),
+];
+
     }
 
-    public function save()
-    {
+  public function save()
+{
+    try {
+        // Log awal
+        \Log::info('DEBUG: Mulai simpan submission', [
+            'id_tugas' => $this->idTugas,
+            'id_siswa' => $this->siswa->id ?? null,
+            'jumlah_file' => count($this->file ?? []),
+            'tipe_file' => gettype($this->file),
+        ]);
+
         $this->validate([
             'file' => 'required',
         ]);
 
-        $filePaths = []; // Array untuk menyimpan path file yang berhasil disimpan
+        $filePaths = [];
 
-        // Iterasi melalui array file dan simpan satu per satu
         foreach ($this->file as $file) {
-            if ($file instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile) {
-                // Pastikan file adalah objek TemporaryUploadedFile sebelum kita menyimpannya
-                // Membuat nama acak untuk file
-                $randomName = Str::uuid() . '.' . $file->getClientOriginalExtension();
+            \Log::info('DEBUG: Iterasi file', [
+                'class' => get_class($file),
+                'original_name' => method_exists($file, 'getClientOriginalName') ? $file->getClientOriginalName() : null,
+                'size' => method_exists($file, 'getSize') ? $file->getSize() : null,
+                'mime' => method_exists($file, 'getMimeType') ? $file->getMimeType() : null,
+            ]);
 
-                // Simpan file di disk 'public' dengan nama acak
+            if ($file instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile) {
+                $randomName = Str::uuid() . '.' . $file->getClientOriginalExtension();
                 $filePath = $file->storeAs('filepengumpulantugas', $randomName, 'public');
-                // Simpan path dan nama asli file ke dalam array
+
+                \Log::info('DEBUG: File tersimpan', [
+                    'filePath' => $filePath,
+                ]);
+
                 $filePaths[] = [
                     'path' => $filePath,
                     'name' => $file->getClientOriginalName(),
                 ];
-
-                // Hapus file sementara setelah upload selesai
-                if (file_exists($file->getRealPath())) {
-                    unlink($file->getRealPath());
-                }
+            } else {
+                \Log::warning('DEBUG: File bukan TemporaryUploadedFile', [
+                    'type' => get_class($file),
+                ]);
             }
         }
 
@@ -115,24 +142,41 @@ class Submission extends Page
             'id_tugas' => $this->tugas->id,
             'id_siswa' => $this->siswa->id,
             'created_at' => Carbon::now('Asia/Jakarta'),
-            'updated_at' => Carbon::now('Asia/Jakarta')
+            'updated_at' => Carbon::now('Asia/Jakarta'),
         ]);
 
-        // Simpan data ke database untuk setiap file yang di-upload
+        \Log::info('DEBUG: PengumpulanTugas dibuat', [
+            'id' => $pengumpulanTugas->id,
+        ]);
+
         foreach ($filePaths as $fileData) {
             FilePengumpulanTugas::create([
                 'pengumpulan_tugas_id' => $pengumpulanTugas->id,
-                'file' => $fileData['path'],  // Simpan path file (nama acak)
-                'nama_file' => $fileData['name'], // Simpan nama asli file
+                'file' => $fileData['path'],
+                'nama_file' => $fileData['name'],
+            ]);
+
+            \Log::info('DEBUG: FilePengumpulanTugas dibuat', [
+                'nama_file' => $fileData['name'],
+                'path' => $fileData['path'],
             ]);
         }
 
-        // Refresh table atau halaman
-        return redirect()->route('filament.siswa.pages.submission.{idTugas}.session.{slugSesi}', [
+        \Log::info('DEBUG: Selesai simpan semua data');
+
+        return redirect()->route('filament.siswa.pages.submission', [
             'idTugas' => $this->tugas->id,
             'slugSesi' => $this->slugSesi,
         ]);
+
+    } catch (\Throwable $e) {
+        \Log::error('ERROR: Gagal simpan submission', [
+            'msg' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ]);
+        throw $e; // biar error juga nongol di UI
     }
+}
 
     public function edit($slugSubmission)
     {
