@@ -164,17 +164,13 @@ class Submission extends Page
 
         \Log::info('DEBUG: Selesai simpan semua data');
 
-        return redirect()->route('filament.siswa.pages.submission', [
-            'idTugas' => $this->tugas->id,
-            'slugSesi' => $this->slugSesi,
-        ]);
-
+      
     } catch (\Throwable $e) {
         \Log::error('ERROR: Gagal simpan submission', [
             'msg' => $e->getMessage(),
             'trace' => $e->getTraceAsString(),
         ]);
-        throw $e; // biar error juga nongol di UI
+        throw $e; 
     }
 }
 
